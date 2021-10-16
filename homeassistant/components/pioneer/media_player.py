@@ -25,6 +25,8 @@ from homeassistant.const import (
 )
 import homeassistant.helpers.config_validation as cv
 
+from .sound_modes import CODE_TO_SOUND_MODE
+
 _LOGGER = logging.getLogger(__name__)
 
 CONF_SOURCES = "sources"
@@ -85,9 +87,10 @@ class PioneerDevice(MediaPlayerEntity):
         self._pwstate = "PWR1"
         self._volume = 0
         self._muted = False
-        self._selected_source = ""
+        self._selected_source = None
         self._source_name_to_number = sources
         self._source_number_to_name = {v: k for k, v in sources.items()}
+        self._selected_sound_mode = None
 
     @classmethod
     def telnet_request(cls, telnet, command, expected_prefix):
@@ -138,6 +141,9 @@ class PioneerDevice(MediaPlayerEntity):
 
         muted_value = self.telnet_request(telnet, "?M", "MUT")
         self._muted = (muted_value == "MUT0") if muted_value else None
+
+        sound_mode_value = self.telnet_request(telnet, "?S", "SR")
+        self._selected_sound_mode = CODE_TO_SOUND_MODE[sound_mode_value.removeprefix("SR")] if sound_mode_value else None
 
         # Build the source name dictionaries if necessary
         if not self._source_name_to_number:
@@ -209,6 +215,11 @@ class PioneerDevice(MediaPlayerEntity):
     def media_title(self):
         """Title of current playing media."""
         return self._selected_source
+
+    @property
+    def sound_mode(self):
+        """The current sound mode of the media player"""
+        return self._selected_sound_mode
 
     def turn_off(self):
         """Turn off media player."""
