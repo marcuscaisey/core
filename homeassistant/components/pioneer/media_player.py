@@ -223,6 +223,11 @@ class PioneerDevice(MediaPlayerEntity):
         """The current sound mode of the media player"""
         return self._selected_sound_mode
 
+    @property
+    def sound_mode_list(self):
+        """List of available sound modes."""
+        return list(SOUND_MODE_TO_CODE)
+
     def turn_off(self):
         """Turn off media player."""
         self.telnet_command("PF")
