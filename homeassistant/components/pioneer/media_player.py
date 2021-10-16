@@ -25,7 +25,7 @@ from homeassistant.const import (
 )
 import homeassistant.helpers.config_validation as cv
 
-from .sound_modes import CODE_TO_SOUND_MODE
+from .sound_modes import CODE_TO_SOUND_MODE, SOUND_MODE_TO_CODE
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -249,3 +249,7 @@ class PioneerDevice(MediaPlayerEntity):
     def select_source(self, source):
         """Select input source."""
         self.telnet_command(f"{self._source_name_to_number.get(source)}FN")
+
+    def select_sound_mode(self, sound_mode):
+        """Select sound mode."""
+        self.telnet_command(f"{SOUND_MODE_TO_CODE[sound_mode]}SR")
