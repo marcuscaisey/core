@@ -14,6 +14,7 @@ from homeassistant.components.media_player.const import (
     SUPPORT_VOLUME_MUTE,
     SUPPORT_VOLUME_SET,
     SUPPORT_VOLUME_STEP,
+    SUPPORT_SELECT_SOUND_MODE,
 )
 from homeassistant.const import (
     CONF_HOST,
@@ -45,6 +46,7 @@ SUPPORT_PIONEER = (
     | SUPPORT_TURN_OFF
     | SUPPORT_SELECT_SOURCE
     | SUPPORT_PLAY
+    | SUPPORT_SELECT_SOUND_MODE
 )
 
 MAX_VOLUME = 185
