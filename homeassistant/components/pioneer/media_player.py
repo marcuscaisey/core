@@ -54,9 +54,10 @@ SUPPORT_PIONEER = (
 MAX_VOLUME = 185
 MAX_SOURCE_NUMBERS = 60
 
+
 def sound_modes(value):
     if not isinstance(value, list):
-        raise vol.Invalid("value should be a list")
+        raise vol.Invalid("sound_modes should be a list")
 
     sound_modes = {}
     for name in value:
