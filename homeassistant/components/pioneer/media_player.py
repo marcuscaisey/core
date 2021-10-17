@@ -37,7 +37,7 @@ DEFAULT_NAME = "Pioneer AVR"
 DEFAULT_PORT = 23  # telnet default. Some Pioneer AVRs use 8102
 DEFAULT_TIMEOUT = None
 DEFAULT_SOURCES = {}
-DEFAULT_SOUND_MODES = []
+DEFAULT_SOUND_MODES = {}
 
 SUPPORT_PIONEER = (
     SUPPORT_PAUSE
@@ -55,22 +55,6 @@ MAX_VOLUME = 185
 MAX_SOURCE_NUMBERS = 60
 
 
-def sound_mode_name_to_number(value):
-    if not isinstance(value, (list, dict)):
-        raise vol.Invalid("sound_modes should be a list or dict")
-
-    if isinstance(value, dict):
-        return value
-
-    sound_mode_name_to_number = {}
-    for name in value:
-        if name not in SOUND_MODES:
-            raise vol.Invalid(f'given sound mode "{name}" does not exist')
-        sound_mode_name_to_number[name] = SOUND_MODES[name]
-
-    return sound_mode_name_to_number
-
-
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
         vol.Required(CONF_HOST): cv.string,
@@ -78,7 +62,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
         vol.Optional(CONF_PORT, default=DEFAULT_PORT): cv.port,
         vol.Optional(CONF_TIMEOUT, default=DEFAULT_TIMEOUT): cv.socket_timeout,
         vol.Optional(CONF_SOURCES, default=DEFAULT_SOURCES): {cv.string: cv.string},
-        vol.Optional(CONF_SOUND_MODES, default=DEFAULT_SOUND_MODES): sound_mode_name_to_number,
+        vol.Optional(CONF_SOUND_MODES, default=DEFAULT_SOUND_MODES): {cv.string: cv.string},
     }
 )
 
@@ -114,8 +98,8 @@ class PioneerDevice(MediaPlayerEntity):
         self._source_name_to_number = sources
         self._source_number_to_name = {v: k for k, v in sources.items()}
         self._selected_sound_mode = None
-        self._sound_mode_name_to_number = sound_modes
-        self._sound_mode_number_to_name = {v: k for k, v in sound_modes.items()}
+        self._sound_mode_name_to_code = sound_modes
+        self._sound_mode_code_to_name = {v: k for k, v in sound_modes.items()}
 
     @classmethod
     def telnet_request(cls, telnet, command, expected_prefix):
@@ -167,11 +151,11 @@ class PioneerDevice(MediaPlayerEntity):
         muted_value = self.telnet_request(telnet, "?M", "MUT")
         self._muted = (muted_value == "MUT0") if muted_value else None
 
-        sound_mode_value = self.telnet_request(telnet, "?S", "SR")
-        if sound_mode_value is not None:
-            self._selected_sound_mode = self._sound_mode_number_to_name[sound_mode_value.removeprefix("SR")]
+        sound_mode_code = self.telnet_request(telnet, "?S", "SR")
+        if sound_mode_code is not None:
+            self._selected_sound_mode = self._sound_mode_code_to_name[sound_mode_code.removeprefix("SR")]
         else:
-            self._selected_sound_mode
+            self._selected_sound_mode = None
 
         # Build the source name dictionaries if necessary
         if not self._source_name_to_number:
@@ -252,7 +236,7 @@ class PioneerDevice(MediaPlayerEntity):
     @property
     def sound_mode_list(self):
         """List of available sound modes."""
-        return list(self._sound_mode_name_to_number)
+        return list(self._sound_mode_name_to_code)
 
     def turn_off(self):
         """Turn off media player."""
@@ -285,4 +269,4 @@ class PioneerDevice(MediaPlayerEntity):
 
     def select_sound_mode(self, sound_mode):
         """Select sound mode."""
-        self.telnet_command(f"{self._sound_mode_name_to_number[sound_mode]}SR")
+        self.telnet_command(f"{self._sound_mode_name_to_code[sound_mode]}SR")
