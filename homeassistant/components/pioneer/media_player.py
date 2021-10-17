@@ -151,10 +151,10 @@ class PioneerDevice(MediaPlayerEntity):
 
         if self._sound_mode_name_to_code:
             sound_mode_code = self.telnet_request(telnet, "?S", "SR")
-            if sound_mode_code is not None:
+            if sound_mode_code:
                 self._selected_sound_mode = self._sound_mode_code_to_name.get(sound_mode_code.removeprefix("SR"))
                 if self._selected_sound_mode is None:
-                    _LOGGER.warning(f"sound mode not configured for code: {sound_mode_code}")
+                    _LOGGER.warning(f"sound mode not configured with code: {sound_mode_code}")
             else:
                 self._selected_sound_mode = None
 
