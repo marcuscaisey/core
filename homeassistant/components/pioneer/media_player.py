@@ -56,8 +56,11 @@ MAX_SOURCE_NUMBERS = 60
 
 
 def sound_mode_name_to_number(value):
-    if not isinstance(value, list):
-        raise vol.Invalid("sound_modes should be a list")
+    if not isinstance(value, (list, dict)):
+        raise vol.Invalid("sound_modes should be a list or dict")
+
+    if isinstance(value, dict):
+        return value
 
     sound_mode_name_to_number = {}
     for name in value:
