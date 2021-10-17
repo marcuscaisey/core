@@ -55,17 +55,17 @@ MAX_VOLUME = 185
 MAX_SOURCE_NUMBERS = 60
 
 
-def sound_modes(value):
+def sound_mode_name_to_number(value):
     if not isinstance(value, list):
         raise vol.Invalid("sound_modes should be a list")
 
-    sound_modes = {}
+    sound_mode_name_to_number = {}
     for name in value:
         if name not in SOUND_MODES:
-            raise vol.Invalid(f"{name} is not a valid sound mode")
-        sound_modes[name] = SOUND_MODES[name]
+            raise vol.Invalid(f'given sound mode "{name}" does not exist')
+        sound_mode_name_to_number[name] = SOUND_MODES[name]
 
-    return sound_modes
+    return sound_mode_name_to_number
 
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
@@ -75,7 +75,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
         vol.Optional(CONF_PORT, default=DEFAULT_PORT): cv.port,
         vol.Optional(CONF_TIMEOUT, default=DEFAULT_TIMEOUT): cv.socket_timeout,
         vol.Optional(CONF_SOURCES, default=DEFAULT_SOURCES): {cv.string: cv.string},
-        vol.Optional(CONF_SOUND_MODES, default=DEFAULT_SOUND_MODES): sound_modes,
+        vol.Optional(CONF_SOUND_MODES, default=DEFAULT_SOUND_MODES): sound_mode_name_to_number,
     }
 )
 
