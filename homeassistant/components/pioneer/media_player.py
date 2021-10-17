@@ -26,8 +26,6 @@ from homeassistant.const import (
 )
 import homeassistant.helpers.config_validation as cv
 
-from .sound_modes import SOUND_MODES
-
 _LOGGER = logging.getLogger(__name__)
 
 CONF_SOURCES = "sources"
