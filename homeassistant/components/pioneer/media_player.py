@@ -26,16 +26,18 @@ from homeassistant.const import (
 )
 import homeassistant.helpers.config_validation as cv
 
-from .sound_modes import CODE_TO_SOUND_MODE, SOUND_MODE_TO_CODE
+from .sound_modes import SOUND_MODES
 
 _LOGGER = logging.getLogger(__name__)
 
 CONF_SOURCES = "sources"
+CONF_SOUND_MODES = "sound_modes"
 
 DEFAULT_NAME = "Pioneer AVR"
 DEFAULT_PORT = 23  # telnet default. Some Pioneer AVRs use 8102
 DEFAULT_TIMEOUT = None
 DEFAULT_SOURCES = {}
+DEFAULT_SOUND_MODES = {}
 
 SUPPORT_PIONEER = (
     SUPPORT_PAUSE
@@ -52,6 +54,19 @@ SUPPORT_PIONEER = (
 MAX_VOLUME = 185
 MAX_SOURCE_NUMBERS = 60
 
+def sound_modes(value):
+    if not isinstance(value, list):
+        raise vol.Invalid("value should be a list")
+
+    sound_modes = {}
+    for name in value:
+        if name not in SOUND_MODES:
+            raise vol.Invalid(f"{name} is not a valid sound mode")
+        sound_modes[name] = SOUND_MODES[name]
+
+    return sound_modes
+
+
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
         vol.Required(CONF_HOST): cv.string,
@@ -59,6 +74,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
         vol.Optional(CONF_PORT, default=DEFAULT_PORT): cv.port,
         vol.Optional(CONF_TIMEOUT, default=DEFAULT_TIMEOUT): cv.socket_timeout,
         vol.Optional(CONF_SOURCES, default=DEFAULT_SOURCES): {cv.string: cv.string},
+        vol.Optional(CONF_SOUND_MODES, default=DEFAULT_SOUND_MODES): sound_modes,
     }
 )
 
@@ -71,6 +87,7 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
         config[CONF_PORT],
         config[CONF_TIMEOUT],
         config[CONF_SOURCES],
+        config[CONF_SOUND_MODES],
     )
 
     if pioneer.update():
@@ -80,7 +97,7 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
 class PioneerDevice(MediaPlayerEntity):
     """Representation of a Pioneer device."""
 
-    def __init__(self, name, host, port, timeout, sources):
+    def __init__(self, name, host, port, timeout, sources, sound_modes):
         """Initialize the Pioneer device."""
         self._name = name
         self._host = host
@@ -93,6 +110,8 @@ class PioneerDevice(MediaPlayerEntity):
         self._source_name_to_number = sources
         self._source_number_to_name = {v: k for k, v in sources.items()}
         self._selected_sound_mode = None
+        self._sound_mode_name_to_number = sound_modes
+        self._sound_mode_number_to_name = {v: k for k, v in sound_modes.items()}
 
     @classmethod
     def telnet_request(cls, telnet, command, expected_prefix):
@@ -145,7 +164,10 @@ class PioneerDevice(MediaPlayerEntity):
         self._muted = (muted_value == "MUT0") if muted_value else None
 
         sound_mode_value = self.telnet_request(telnet, "?S", "SR")
-        self._selected_sound_mode = CODE_TO_SOUND_MODE[sound_mode_value.removeprefix("SR")] if sound_mode_value else None
+        if sound_mode_value is not None:
+            self._selected_sound_mode = self._sound_mode_number_to_name[sound_mode_value.removeprefix("SR")]
+        else:
+            self._selected_sound_mode
 
         # Build the source name dictionaries if necessary
         if not self._source_name_to_number:
@@ -226,7 +248,7 @@ class PioneerDevice(MediaPlayerEntity):
     @property
     def sound_mode_list(self):
         """List of available sound modes."""
-        return list(SOUND_MODE_TO_CODE)
+        return list(self._sound_mode_name_to_number)
 
     def turn_off(self):
         """Turn off media player."""
@@ -259,4 +281,4 @@ class PioneerDevice(MediaPlayerEntity):
 
     def select_sound_mode(self, sound_mode):
         """Select sound mode."""
-        self.telnet_command(f"{SOUND_MODE_TO_CODE[sound_mode]}SR")
+        self.telnet_command(f"{self._sound_mode_name_to_number[sound_mode]}SR")

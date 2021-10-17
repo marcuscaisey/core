@@ -1,4 +1,4 @@
-SOUND_MODE_TO_CODE = {
+SOUND_MODES = {
     "STEREO (cyclic)": "0001",
     "STEREO (direct set)": "0009",
     "Auto Level Control (A.L.C.)": "0151",
@@ -96,5 +96,3 @@ SOUND_MODE_TO_CODE = {
     "DIRECT": "0007",
     "PURE DIRECT": "0008",
 }
-
-CODE_TO_SOUND_MODE = {code: sound_mode for sound_mode, code in SOUND_MODE_TO_CODE.items()}
