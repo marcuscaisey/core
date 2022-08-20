@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 from omnilogic import LoginException, OmniLogicException
 
-from homeassistant import config_entries, data_entry_flow, setup
+from homeassistant import config_entries, data_entry_flow
 from homeassistant.components.omnilogic.const import DOMAIN
 
 from tests.common import MockConfigEntry
@@ -13,7 +13,7 @@ DATA = {"username": "test-username", "password": "test-password"}
 
 async def test_form(hass):
     """Test we get the form."""
-    await setup.async_setup_component(hass, "persistent_notification", {})
+
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": config_entries.SOURCE_USER}
     )
@@ -43,7 +43,6 @@ async def test_already_configured(hass):
     """Test config flow when Omnilogic component is already setup."""
     MockConfigEntry(domain="omnilogic", data=DATA).add_to_hass(hass)
 
-    await setup.async_setup_component(hass, "persistent_notification", {})
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": config_entries.SOURCE_USER}
     )
@@ -55,7 +54,6 @@ async def test_already_configured(hass):
 async def test_with_invalid_credentials(hass):
     """Test with invalid credentials."""
 
-    await setup.async_setup_component(hass, "persistent_notification", {})
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": config_entries.SOURCE_USER}
     )
@@ -77,7 +75,6 @@ async def test_with_invalid_credentials(hass):
 async def test_form_cannot_connect(hass):
     """Test if invalid response or no connection returned from Hayward."""
 
-    await setup.async_setup_component(hass, "persistent_notification", {})
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": config_entries.SOURCE_USER}
     )
@@ -98,7 +95,7 @@ async def test_form_cannot_connect(hass):
 
 async def test_with_unknown_error(hass):
     """Test with unknown error response from Hayward."""
-    await setup.async_setup_component(hass, "persistent_notification", {})
+
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": config_entries.SOURCE_USER}
     )
@@ -132,7 +129,7 @@ async def test_option_flow(hass):
             data=None,
         )
 
-    assert result["type"] == data_entry_flow.RESULT_TYPE_FORM
+    assert result["type"] == data_entry_flow.FlowResultType.FORM
     assert result["step_id"] == "init"
 
     result = await hass.config_entries.options.async_configure(
@@ -140,6 +137,6 @@ async def test_option_flow(hass):
         user_input={"polling_interval": 9},
     )
 
-    assert result["type"] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
+    assert result["type"] == data_entry_flow.FlowResultType.CREATE_ENTRY
     assert result["title"] == ""
     assert result["data"]["polling_interval"] == 9

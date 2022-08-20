@@ -17,7 +17,6 @@ from homeassistant.components.media_player.const import (
     MEDIA_CLASS_IMAGE,
     MEDIA_CLASS_VIDEO,
 )
-from homeassistant.components.media_source.const import MEDIA_MIME_TYPES
 from homeassistant.components.media_source.models import (
     BrowseMediaSource,
     MediaSource,
@@ -56,7 +55,7 @@ def async_parse_identifier(
     identifier = item.identifier or ""
     start = ["", "", ""]
     items = identifier.lstrip("/").split("~~", 2)
-    return tuple(items + start[len(items) :])
+    return tuple(items + start[len(items) :])  # type: ignore[return-value]
 
 
 @dataclass
@@ -87,9 +86,7 @@ class XboxSource(MediaSource):
         kind = category.split("#", 1)[1]
         return PlayMedia(url, MIME_TYPE_MAP[kind])
 
-    async def async_browse_media(
-        self, item: MediaSourceItem, media_types: tuple[str] = MEDIA_MIME_TYPES
-    ) -> BrowseMediaSource:
+    async def async_browse_media(self, item: MediaSourceItem) -> BrowseMediaSource:
         """Return media."""
         title, category, _ = async_parse_identifier(item)
 
@@ -204,7 +201,7 @@ class XboxSource(MediaSource):
         )
 
 
-def _build_game_item(item: InstalledPackage, images: list[Image]):
+def _build_game_item(item: InstalledPackage, images: dict[str, list[Image]]):
     """Build individual game."""
     thumbnail = ""
     image = _find_media_image(images.get(item.one_store_product_id, []))

@@ -2,7 +2,8 @@
 
 from unittest.mock import patch
 
-from homeassistant import config_entries, data_entry_flow, setup
+from homeassistant import config_entries, data_entry_flow
+from homeassistant.components import usb
 from homeassistant.components.insteon.config_flow import (
     HUB1,
     HUB2,
@@ -70,7 +71,7 @@ async def _init_form(hass, modem_type):
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": config_entries.SOURCE_USER}
     )
-    assert result["type"] == data_entry_flow.RESULT_TYPE_FORM
+    assert result["type"] == data_entry_flow.FlowResultType.FORM
     assert result["errors"] == {}
 
     result2 = await hass.config_entries.flow.async_configure(
@@ -95,7 +96,7 @@ async def _device_form(hass, flow_id, connection, user_input):
 
 async def test_form_select_modem(hass: HomeAssistant):
     """Test we get a modem form."""
-    await setup.async_setup_component(hass, "persistent_notification", {})
+
     result = await _init_form(hass, HUB2)
     assert result["step_id"] == STEP_HUB_V2
     assert result["type"] == "form"
@@ -117,13 +118,13 @@ async def test_fail_on_existing(hass: HomeAssistant):
         data={**MOCK_USER_INPUT_HUB_V2, CONF_HUB_VERSION: 2},
         context={"source": config_entries.SOURCE_USER},
     )
-    assert result["type"] == data_entry_flow.RESULT_TYPE_ABORT
+    assert result["type"] == data_entry_flow.FlowResultType.ABORT
     assert result["reason"] == "single_instance_allowed"
 
 
 async def test_form_select_plm(hass: HomeAssistant):
     """Test we set up the PLM correctly."""
-    await setup.async_setup_component(hass, "persistent_notification", {})
+
     result = await _init_form(hass, PLM)
 
     result2, mock_setup, mock_setup_entry = await _device_form(
@@ -138,7 +139,7 @@ async def test_form_select_plm(hass: HomeAssistant):
 
 async def test_form_select_hub_v1(hass: HomeAssistant):
     """Test we set up the Hub v1 correctly."""
-    await setup.async_setup_component(hass, "persistent_notification", {})
+
     result = await _init_form(hass, HUB1)
 
     result2, mock_setup, mock_setup_entry = await _device_form(
@@ -156,7 +157,7 @@ async def test_form_select_hub_v1(hass: HomeAssistant):
 
 async def test_form_select_hub_v2(hass: HomeAssistant):
     """Test we set up the Hub v2 correctly."""
-    await setup.async_setup_component(hass, "persistent_notification", {})
+
     result = await _init_form(hass, HUB2)
 
     result2, mock_setup, mock_setup_entry = await _device_form(
@@ -174,7 +175,7 @@ async def test_form_select_hub_v2(hass: HomeAssistant):
 
 async def test_failed_connection_plm(hass: HomeAssistant):
     """Test a failed connection with the PLM."""
-    await setup.async_setup_component(hass, "persistent_notification", {})
+
     result = await _init_form(hass, PLM)
 
     result2, _, _ = await _device_form(
@@ -186,7 +187,7 @@ async def test_failed_connection_plm(hass: HomeAssistant):
 
 async def test_failed_connection_hub(hass: HomeAssistant):
     """Test a failed connection with a Hub."""
-    await setup.async_setup_component(hass, "persistent_notification", {})
+
     result = await _init_form(hass, HUB2)
 
     result2, _, _ = await _device_form(
@@ -208,7 +209,6 @@ async def _import_config(hass, config):
 
 async def test_import_plm(hass: HomeAssistant):
     """Test importing a minimum PLM config from yaml."""
-    await setup.async_setup_component(hass, "persistent_notification", {})
 
     result = await _import_config(hass, MOCK_IMPORT_CONFIG_PLM)
 
@@ -223,7 +223,7 @@ async def _options_init_form(hass, entry_id, step):
     with patch(PATCH_ASYNC_SETUP_ENTRY, return_value=True):
         result = await hass.config_entries.options.async_init(entry_id)
 
-    assert result["type"] == data_entry_flow.RESULT_TYPE_FORM
+    assert result["type"] == data_entry_flow.FlowResultType.FORM
     assert result["step_id"] == "init"
 
     result2 = await hass.config_entries.options.async_configure(
@@ -235,7 +235,6 @@ async def _options_init_form(hass, entry_id, step):
 
 async def test_import_min_hub_v2(hass: HomeAssistant):
     """Test importing a minimum Hub v2 config from yaml."""
-    await setup.async_setup_component(hass, "persistent_notification", {})
 
     result = await _import_config(
         hass, {**MOCK_IMPORT_MINIMUM_HUB_V2, CONF_PORT: 25105, CONF_HUB_VERSION: 2}
@@ -253,7 +252,6 @@ async def test_import_min_hub_v2(hass: HomeAssistant):
 
 async def test_import_min_hub_v1(hass: HomeAssistant):
     """Test importing a minimum Hub v1 config from yaml."""
-    await setup.async_setup_component(hass, "persistent_notification", {})
 
     result = await _import_config(
         hass, {**MOCK_IMPORT_MINIMUM_HUB_V1, CONF_PORT: 9761, CONF_HUB_VERSION: 1}
@@ -281,13 +279,12 @@ async def test_import_existing(hass: HomeAssistant):
     result = await _import_config(
         hass, {**MOCK_IMPORT_MINIMUM_HUB_V2, CONF_PORT: 25105, CONF_HUB_VERSION: 2}
     )
-    assert result["type"] == data_entry_flow.RESULT_TYPE_ABORT
+    assert result["type"] == data_entry_flow.FlowResultType.ABORT
     assert result["reason"] == "single_instance_allowed"
 
 
 async def test_import_failed_connection(hass: HomeAssistant):
     """Test a failed connection on import."""
-    await setup.async_setup_component(hass, "persistent_notification", {})
 
     with patch(PATCH_CONNECTION, new=mock_failed_connection,), patch(
         PATCH_ASYNC_SETUP, return_value=True
@@ -298,7 +295,7 @@ async def test_import_failed_connection(hass: HomeAssistant):
             data={**MOCK_IMPORT_MINIMUM_HUB_V2, CONF_PORT: 25105, CONF_HUB_VERSION: 2},
         )
 
-    assert result["type"] == data_entry_flow.RESULT_TYPE_ABORT
+    assert result["type"] == data_entry_flow.FlowResultType.ABORT
     assert result["reason"] == "cannot_connect"
 
 
@@ -332,7 +329,7 @@ async def test_options_change_hub_config(hass: HomeAssistant):
     }
     result, _ = await _options_form(hass, result["flow_id"], user_input)
 
-    assert result["type"] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
+    assert result["type"] == data_entry_flow.FlowResultType.CREATE_ENTRY
     assert config_entry.options == {}
     assert config_entry.data == {**user_input, CONF_HUB_VERSION: 2}
 
@@ -356,7 +353,7 @@ async def test_options_add_device_override(hass: HomeAssistant):
     }
     result, _ = await _options_form(hass, result["flow_id"], user_input)
 
-    assert result["type"] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
+    assert result["type"] == data_entry_flow.FlowResultType.CREATE_ENTRY
     assert len(config_entry.options[CONF_OVERRIDE]) == 1
     assert config_entry.options[CONF_OVERRIDE][0][CONF_ADDRESS] == "1A.2B.3C"
     assert config_entry.options[CONF_OVERRIDE][0][CONF_CAT] == 4
@@ -400,7 +397,7 @@ async def test_options_remove_device_override(hass: HomeAssistant):
     user_input = {CONF_ADDRESS: "1A.2B.3C"}
     result, _ = await _options_form(hass, result["flow_id"], user_input)
 
-    assert result["type"] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
+    assert result["type"] == data_entry_flow.FlowResultType.CREATE_ENTRY
     assert len(config_entry.options[CONF_OVERRIDE]) == 1
 
 
@@ -432,7 +429,7 @@ async def test_options_remove_device_override_with_x10(hass: HomeAssistant):
     user_input = {CONF_ADDRESS: "1A.2B.3C"}
     result, _ = await _options_form(hass, result["flow_id"], user_input)
 
-    assert result["type"] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
+    assert result["type"] == data_entry_flow.FlowResultType.CREATE_ENTRY
     assert len(config_entry.options[CONF_OVERRIDE]) == 1
     assert len(config_entry.options[CONF_X10]) == 1
 
@@ -457,7 +454,7 @@ async def test_options_add_x10_device(hass: HomeAssistant):
     }
     result2, _ = await _options_form(hass, result["flow_id"], user_input)
 
-    assert result2["type"] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
+    assert result2["type"] == data_entry_flow.FlowResultType.CREATE_ENTRY
     assert len(config_entry.options[CONF_X10]) == 1
     assert config_entry.options[CONF_X10][0][CONF_HOUSECODE] == "c"
     assert config_entry.options[CONF_X10][0][CONF_UNITCODE] == 12
@@ -473,7 +470,7 @@ async def test_options_add_x10_device(hass: HomeAssistant):
     }
     result3, _ = await _options_form(hass, result["flow_id"], user_input)
 
-    assert result3["type"] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
+    assert result3["type"] == data_entry_flow.FlowResultType.CREATE_ENTRY
     assert len(config_entry.options[CONF_X10]) == 2
     assert config_entry.options[CONF_X10][1][CONF_HOUSECODE] == "d"
     assert config_entry.options[CONF_X10][1][CONF_UNITCODE] == 10
@@ -511,15 +508,10 @@ async def test_options_remove_x10_device(hass: HomeAssistant):
     config_entry.add_to_hass(hass)
     result = await _options_init_form(hass, config_entry.entry_id, STEP_REMOVE_X10)
 
-    for device in config_entry.options[CONF_X10]:
-        housecode = device[CONF_HOUSECODE].upper()
-        unitcode = device[CONF_UNITCODE]
-        print(f"Housecode: {housecode}, Unitcode: {unitcode}")
-
     user_input = {CONF_DEVICE: "Housecode: C, Unitcode: 4"}
     result, _ = await _options_form(hass, result["flow_id"], user_input)
 
-    assert result["type"] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
+    assert result["type"] == data_entry_flow.FlowResultType.CREATE_ENTRY
     assert len(config_entry.options[CONF_X10]) == 1
 
 
@@ -551,15 +543,10 @@ async def test_options_remove_x10_device_with_override(hass: HomeAssistant):
     config_entry.add_to_hass(hass)
     result = await _options_init_form(hass, config_entry.entry_id, STEP_REMOVE_X10)
 
-    for device in config_entry.options[CONF_X10]:
-        housecode = device[CONF_HOUSECODE].upper()
-        unitcode = device[CONF_UNITCODE]
-        print(f"Housecode: {housecode}, Unitcode: {unitcode}")
-
     user_input = {CONF_DEVICE: "Housecode: C, Unitcode: 4"}
     result, _ = await _options_form(hass, result["flow_id"], user_input)
 
-    assert result["type"] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
+    assert result["type"] == data_entry_flow.FlowResultType.CREATE_ENTRY
     assert len(config_entry.options[CONF_X10]) == 1
     assert len(config_entry.options[CONF_OVERRIDE]) == 1
 
@@ -575,14 +562,14 @@ async def test_options_dup_selection(hass: HomeAssistant):
     config_entry.add_to_hass(hass)
     result = await hass.config_entries.options.async_init(config_entry.entry_id)
 
-    assert result["type"] == data_entry_flow.RESULT_TYPE_FORM
+    assert result["type"] == data_entry_flow.FlowResultType.FORM
     assert result["step_id"] == "init"
 
     result2 = await hass.config_entries.options.async_configure(
         result["flow_id"],
         {STEP_ADD_OVERRIDE: True, STEP_ADD_X10: True},
     )
-    assert result2["type"] == data_entry_flow.RESULT_TYPE_FORM
+    assert result2["type"] == data_entry_flow.FlowResultType.FORM
     assert result2["errors"] == {"base": "select_single"}
 
 
@@ -606,5 +593,58 @@ async def test_options_override_bad_data(hass: HomeAssistant):
     }
     result, _ = await _options_form(hass, result["flow_id"], user_input)
 
-    assert result["type"] == data_entry_flow.RESULT_TYPE_FORM
+    assert result["type"] == data_entry_flow.FlowResultType.FORM
     assert result["errors"] == {"base": "input_error"}
+
+
+async def test_discovery_via_usb(hass):
+    """Test usb flow."""
+    discovery_info = usb.UsbServiceInfo(
+        device="/dev/ttyINSTEON",
+        pid="AAAA",
+        vid="AAAA",
+        serial_number="1234",
+        description="insteon radio",
+        manufacturer="test",
+    )
+    result = await hass.config_entries.flow.async_init(
+        "insteon", context={"source": config_entries.SOURCE_USB}, data=discovery_info
+    )
+    await hass.async_block_till_done()
+    assert result["type"] == data_entry_flow.FlowResultType.FORM
+    assert result["step_id"] == "confirm_usb"
+
+    with patch("homeassistant.components.insteon.config_flow.async_connect"), patch(
+        "homeassistant.components.insteon.async_setup_entry", return_value=True
+    ):
+        result2 = await hass.config_entries.flow.async_configure(
+            result["flow_id"], user_input={}
+        )
+        await hass.async_block_till_done()
+
+    assert result2["type"] == data_entry_flow.FlowResultType.CREATE_ENTRY
+    assert result2["data"] == {"device": "/dev/ttyINSTEON"}
+
+
+async def test_discovery_via_usb_already_setup(hass):
+    """Test usb flow -- already setup."""
+
+    MockConfigEntry(
+        domain=DOMAIN, data={CONF_DEVICE: {CONF_DEVICE: "/dev/ttyUSB1"}}
+    ).add_to_hass(hass)
+
+    discovery_info = usb.UsbServiceInfo(
+        device="/dev/ttyINSTEON",
+        pid="AAAA",
+        vid="AAAA",
+        serial_number="1234",
+        description="insteon radio",
+        manufacturer="test",
+    )
+    result = await hass.config_entries.flow.async_init(
+        "insteon", context={"source": config_entries.SOURCE_USB}, data=discovery_info
+    )
+    await hass.async_block_till_done()
+
+    assert result["type"] == data_entry_flow.FlowResultType.ABORT
+    assert result["reason"] == "single_instance_allowed"

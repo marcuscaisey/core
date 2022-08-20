@@ -24,7 +24,8 @@ SSDP = {
     ],
     "deconz": [
         {
-            "manufacturer": "Royal Philips Electronics"
+            "manufacturer": "Royal Philips Electronics",
+            "manufacturerURL": "http://www.dresden-elektronik.de"
         }
     ],
     "denonavr": [
@@ -83,6 +84,38 @@ SSDP = {
             "manufacturer": "DIRECTV"
         }
     ],
+    "dlna_dmr": [
+        {
+            "deviceType": "urn:schemas-upnp-org:device:MediaRenderer:1",
+            "st": "urn:schemas-upnp-org:device:MediaRenderer:1"
+        },
+        {
+            "deviceType": "urn:schemas-upnp-org:device:MediaRenderer:2",
+            "st": "urn:schemas-upnp-org:device:MediaRenderer:2"
+        },
+        {
+            "deviceType": "urn:schemas-upnp-org:device:MediaRenderer:3",
+            "st": "urn:schemas-upnp-org:device:MediaRenderer:3"
+        }
+    ],
+    "dlna_dms": [
+        {
+            "deviceType": "urn:schemas-upnp-org:device:MediaServer:1",
+            "st": "urn:schemas-upnp-org:device:MediaServer:1"
+        },
+        {
+            "deviceType": "urn:schemas-upnp-org:device:MediaServer:2",
+            "st": "urn:schemas-upnp-org:device:MediaServer:2"
+        },
+        {
+            "deviceType": "urn:schemas-upnp-org:device:MediaServer:3",
+            "st": "urn:schemas-upnp-org:device:MediaServer:3"
+        },
+        {
+            "deviceType": "urn:schemas-upnp-org:device:MediaServer:4",
+            "st": "urn:schemas-upnp-org:device:MediaServer:4"
+        }
+    ],
     "fritz": [
         {
             "st": "urn:schemas-upnp-org:device:fritzbox:1"
@@ -136,6 +169,12 @@ SSDP = {
             "manufacturer": "Universal Devices Inc."
         }
     ],
+    "kaleidescape": [
+        {
+            "deviceType": "schemas-upnp-org:device:Basic:1",
+            "manufacturer": "Kaleidescape, Inc."
+        }
+    ],
     "keenetic_ndms2": [
         {
             "deviceType": "urn:schemas-upnp-org:device:InternetGatewayDevice:1",
@@ -149,6 +188,11 @@ SSDP = {
     "konnected": [
         {
             "manufacturer": "konnected.io"
+        }
+    ],
+    "lametric": [
+        {
+            "deviceType": "urn:schemas-upnp-org:device:LaMetric:1"
         }
     ],
     "nanoleaf": [
@@ -171,6 +215,12 @@ SSDP = {
             "manufacturer": "NETGEAR, Inc."
         }
     ],
+    "octoprint": [
+        {
+            "deviceType": "urn:schemas-upnp-org:device:Basic:1",
+            "manufacturer": "The OctoPrint Project"
+        }
+    ],
     "roku": [
         {
             "deviceType": "urn:roku-com:device:player:1-0",
@@ -181,6 +231,17 @@ SSDP = {
     "samsungtv": [
         {
             "st": "urn:samsung.com:device:RemoteControlReceiver:1"
+        },
+        {
+            "st": "urn:samsung.com:service:MainTVAgent2:1"
+        },
+        {
+            "manufacturer": "Samsung",
+            "st": "urn:schemas-upnp-org:service:RenderingControl:1"
+        },
+        {
+            "manufacturer": "Samsung Electronics",
+            "st": "urn:schemas-upnp-org:service:RenderingControl:1"
         }
     ],
     "songpal": [
@@ -208,14 +269,30 @@ SSDP = {
     ],
     "unifi": [
         {
-            "deviceType": "urn:schemas-upnp-org:device:InternetGatewayDevice:1",
             "manufacturer": "Ubiquiti Networks",
             "modelDescription": "UniFi Dream Machine"
         },
         {
-            "deviceType": "urn:schemas-upnp-org:device:InternetGatewayDevice:1",
             "manufacturer": "Ubiquiti Networks",
             "modelDescription": "UniFi Dream Machine Pro"
+        },
+        {
+            "manufacturer": "Ubiquiti Networks",
+            "modelDescription": "UniFi Dream Machine SE"
+        }
+    ],
+    "unifiprotect": [
+        {
+            "manufacturer": "Ubiquiti Networks",
+            "modelDescription": "UniFi Dream Machine"
+        },
+        {
+            "manufacturer": "Ubiquiti Networks",
+            "modelDescription": "UniFi Dream Machine Pro"
+        },
+        {
+            "manufacturer": "Ubiquiti Networks",
+            "modelDescription": "UniFi Dream Machine SE"
         }
     ],
     "upnp": [
@@ -224,6 +301,11 @@ SSDP = {
         },
         {
             "st": "urn:schemas-upnp-org:device:InternetGatewayDevice:2"
+        }
+    ],
+    "webostv": [
+        {
+            "st": "urn:lge-com:service:webos-second-screen:1"
         }
     ],
     "wemo": [

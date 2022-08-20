@@ -3,12 +3,15 @@ import logging
 
 import voluptuous as vol
 
-from homeassistant.components.geo_location import DOMAIN
 from homeassistant.const import CONF_EVENT, CONF_PLATFORM, CONF_SOURCE, CONF_ZONE
-from homeassistant.core import HassJob, callback
+from homeassistant.core import CALLBACK_TYPE, HassJob, HomeAssistant, callback
 from homeassistant.helpers import condition, config_validation as cv
 from homeassistant.helpers.config_validation import entity_domain
 from homeassistant.helpers.event import TrackStates, async_track_state_change_filtered
+from homeassistant.helpers.trigger import TriggerActionType, TriggerInfo
+from homeassistant.helpers.typing import ConfigType
+
+from . import DOMAIN
 
 # mypy: allow-untyped-defs, no-check-untyped-defs
 
@@ -35,10 +38,15 @@ def source_match(state, source):
     return state and state.attributes.get("source") == source
 
 
-async def async_attach_trigger(hass, config, action, automation_info):
+async def async_attach_trigger(
+    hass: HomeAssistant,
+    config: ConfigType,
+    action: TriggerActionType,
+    trigger_info: TriggerInfo,
+) -> CALLBACK_TYPE:
     """Listen for state changes based on configuration."""
-    trigger_data = automation_info["trigger_data"]
-    source = config.get(CONF_SOURCE).lower()
+    trigger_data = trigger_info["trigger_data"]
+    source: str = config[CONF_SOURCE].lower()
     zone_entity_id = config.get(CONF_ZONE)
     trigger_event = config.get(CONF_EVENT)
     job = HassJob(action)
@@ -52,11 +60,10 @@ async def async_attach_trigger(hass, config, action, automation_info):
         if not source_match(from_state, source) and not source_match(to_state, source):
             return
 
-        zone_state = hass.states.get(zone_entity_id)
-        if zone_state is None:
+        if (zone_state := hass.states.get(zone_entity_id)) is None:
             _LOGGER.warning(
                 "Unable to execute automation %s: Zone %s not found",
-                automation_info["name"],
+                trigger_info["name"],
                 zone_entity_id,
             )
             return

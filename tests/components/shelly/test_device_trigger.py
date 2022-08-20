@@ -3,8 +3,8 @@ from unittest.mock import AsyncMock, Mock
 
 import pytest
 
-from homeassistant import setup
 from homeassistant.components import automation
+from homeassistant.components.device_automation import DeviceAutomationType
 from homeassistant.components.device_automation.exceptions import (
     InvalidDeviceAutomationConfig,
 )
@@ -26,32 +26,49 @@ from tests.common import (
     MockConfigEntry,
     assert_lists_same,
     async_get_device_automations,
-    async_mock_service,
 )
 
 
-async def test_get_triggers_block_device(hass, coap_wrapper):
+@pytest.mark.parametrize(
+    "button_type, is_valid",
+    [
+        ("momentary", True),
+        ("momentary_on_release", True),
+        ("detached", True),
+        ("toggle", False),
+    ],
+)
+async def test_get_triggers_block_device(
+    hass, coap_wrapper, monkeypatch, button_type, is_valid
+):
     """Test we get the expected triggers from a shelly block device."""
     assert coap_wrapper
-    expected_triggers = [
-        {
-            CONF_PLATFORM: "device",
-            CONF_DEVICE_ID: coap_wrapper.device_id,
-            CONF_DOMAIN: DOMAIN,
-            CONF_TYPE: "single",
-            CONF_SUBTYPE: "button1",
-        },
-        {
-            CONF_PLATFORM: "device",
-            CONF_DEVICE_ID: coap_wrapper.device_id,
-            CONF_DOMAIN: DOMAIN,
-            CONF_TYPE: "long",
-            CONF_SUBTYPE: "button1",
-        },
-    ]
+
+    monkeypatch.setitem(
+        coap_wrapper.device.settings,
+        "relays",
+        [
+            {"btn_type": button_type},
+            {"btn_type": "toggle"},
+        ],
+    )
+
+    expected_triggers = []
+    if is_valid:
+        expected_triggers = [
+            {
+                CONF_PLATFORM: "device",
+                CONF_DEVICE_ID: coap_wrapper.device_id,
+                CONF_DOMAIN: DOMAIN,
+                CONF_TYPE: type,
+                CONF_SUBTYPE: "button1",
+                "metadata": {},
+            }
+            for type in ["single", "long"]
+        ]
 
     triggers = await async_get_device_automations(
-        hass, "trigger", coap_wrapper.device_id
+        hass, DeviceAutomationType.TRIGGER, coap_wrapper.device_id
     )
 
     assert_lists_same(triggers, expected_triggers)
@@ -65,41 +82,15 @@ async def test_get_triggers_rpc_device(hass, rpc_wrapper):
             CONF_PLATFORM: "device",
             CONF_DEVICE_ID: rpc_wrapper.device_id,
             CONF_DOMAIN: DOMAIN,
-            CONF_TYPE: "btn_down",
+            CONF_TYPE: type,
             CONF_SUBTYPE: "button1",
-        },
-        {
-            CONF_PLATFORM: "device",
-            CONF_DEVICE_ID: rpc_wrapper.device_id,
-            CONF_DOMAIN: DOMAIN,
-            CONF_TYPE: "btn_up",
-            CONF_SUBTYPE: "button1",
-        },
-        {
-            CONF_PLATFORM: "device",
-            CONF_DEVICE_ID: rpc_wrapper.device_id,
-            CONF_DOMAIN: DOMAIN,
-            CONF_TYPE: "single_push",
-            CONF_SUBTYPE: "button1",
-        },
-        {
-            CONF_PLATFORM: "device",
-            CONF_DEVICE_ID: rpc_wrapper.device_id,
-            CONF_DOMAIN: DOMAIN,
-            CONF_TYPE: "double_push",
-            CONF_SUBTYPE: "button1",
-        },
-        {
-            CONF_PLATFORM: "device",
-            CONF_DEVICE_ID: rpc_wrapper.device_id,
-            CONF_DOMAIN: DOMAIN,
-            CONF_TYPE: "long_push",
-            CONF_SUBTYPE: "button1",
-        },
+            "metadata": {},
+        }
+        for type in ["btn_down", "btn_up", "single_push", "double_push", "long_push"]
     ]
 
     triggers = await async_get_device_automations(
-        hass, "trigger", rpc_wrapper.device_id
+        hass, DeviceAutomationType.TRIGGER, rpc_wrapper.device_id
     )
 
     assert_lists_same(triggers, expected_triggers)
@@ -111,7 +102,7 @@ async def test_get_triggers_button(hass):
 
     config_entry = MockConfigEntry(
         domain=DOMAIN,
-        data={"sleep_period": 43200, "model": "SHBTN-1"},
+        data={"sleep_period": 43200, "model": "SHBTN-1", "host": "1.2.3.4"},
         unique_id="12345678",
     )
     config_entry.add_to_hass(hass)
@@ -137,34 +128,51 @@ async def test_get_triggers_button(hass):
             CONF_PLATFORM: "device",
             CONF_DEVICE_ID: coap_wrapper.device_id,
             CONF_DOMAIN: DOMAIN,
-            CONF_TYPE: "single",
+            CONF_TYPE: type,
             CONF_SUBTYPE: "button",
-        },
-        {
-            CONF_PLATFORM: "device",
-            CONF_DEVICE_ID: coap_wrapper.device_id,
-            CONF_DOMAIN: DOMAIN,
-            CONF_TYPE: "double",
-            CONF_SUBTYPE: "button",
-        },
-        {
-            CONF_PLATFORM: "device",
-            CONF_DEVICE_ID: coap_wrapper.device_id,
-            CONF_DOMAIN: DOMAIN,
-            CONF_TYPE: "triple",
-            CONF_SUBTYPE: "button",
-        },
-        {
-            CONF_PLATFORM: "device",
-            CONF_DEVICE_ID: coap_wrapper.device_id,
-            CONF_DOMAIN: DOMAIN,
-            CONF_TYPE: "long",
-            CONF_SUBTYPE: "button",
-        },
+            "metadata": {},
+        }
+        for type in ["single", "double", "triple", "long"]
     ]
 
     triggers = await async_get_device_automations(
-        hass, "trigger", coap_wrapper.device_id
+        hass, DeviceAutomationType.TRIGGER, coap_wrapper.device_id
+    )
+
+    assert_lists_same(triggers, expected_triggers)
+
+
+async def test_get_triggers_non_initialized_devices(hass):
+    """Test we get the empty triggers for non-initialized devices."""
+    await async_setup_component(hass, "shelly", {})
+
+    config_entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={"sleep_period": 43200, "model": "SHDW-2", "host": "1.2.3.4"},
+        unique_id="12345678",
+    )
+    config_entry.add_to_hass(hass)
+
+    device = Mock(
+        blocks=None,
+        settings=None,
+        shelly=None,
+        update=AsyncMock(),
+        initialized=False,
+    )
+
+    hass.data[DOMAIN] = {DATA_CONFIG_ENTRY: {}}
+    hass.data[DOMAIN][DATA_CONFIG_ENTRY][config_entry.entry_id] = {}
+    coap_wrapper = hass.data[DOMAIN][DATA_CONFIG_ENTRY][config_entry.entry_id][
+        BLOCK
+    ] = BlockDeviceWrapper(hass, config_entry, device)
+
+    coap_wrapper.async_setup()
+
+    expected_triggers = []
+
+    triggers = await async_get_device_automations(
+        hass, DeviceAutomationType.TRIGGER, coap_wrapper.device_id
     )
 
     assert_lists_same(triggers, expected_triggers)
@@ -181,13 +189,14 @@ async def test_get_triggers_for_invalid_device_id(hass, device_reg, coap_wrapper
     )
 
     with pytest.raises(InvalidDeviceAutomationConfig):
-        await async_get_device_automations(hass, "trigger", invalid_device.id)
+        await async_get_device_automations(
+            hass, DeviceAutomationType.TRIGGER, invalid_device.id
+        )
 
 
 async def test_if_fires_on_click_event_block_device(hass, calls, coap_wrapper):
     """Test for click_event trigger firing for block device."""
     assert coap_wrapper
-    await setup.async_setup_component(hass, "persistent_notification", {})
 
     assert await async_setup_component(
         hass,
@@ -226,7 +235,6 @@ async def test_if_fires_on_click_event_block_device(hass, calls, coap_wrapper):
 async def test_if_fires_on_click_event_rpc_device(hass, calls, rpc_wrapper):
     """Test for click_event trigger firing for rpc device."""
     assert rpc_wrapper
-    await setup.async_setup_component(hass, "persistent_notification", {})
 
     assert await async_setup_component(
         hass,
@@ -265,7 +273,6 @@ async def test_if_fires_on_click_event_rpc_device(hass, calls, rpc_wrapper):
 async def test_validate_trigger_block_device_not_ready(hass, calls, coap_wrapper):
     """Test validate trigger config when block device is not ready."""
     assert coap_wrapper
-    await setup.async_setup_component(hass, "persistent_notification", {})
 
     assert await async_setup_component(
         hass,
@@ -303,7 +310,6 @@ async def test_validate_trigger_block_device_not_ready(hass, calls, coap_wrapper
 async def test_validate_trigger_rpc_device_not_ready(hass, calls, rpc_wrapper):
     """Test validate trigger config when RPC device is not ready."""
     assert rpc_wrapper
-    await setup.async_setup_component(hass, "persistent_notification", {})
 
     assert await async_setup_component(
         hass,
@@ -341,7 +347,6 @@ async def test_validate_trigger_rpc_device_not_ready(hass, calls, rpc_wrapper):
 async def test_validate_trigger_invalid_triggers(hass, coap_wrapper):
     """Test for click_event with invalid triggers."""
     assert coap_wrapper
-    notification_calls = async_mock_service(hass, "persistent_notification", "create")
 
     assert await async_setup_component(
         hass,
@@ -365,8 +370,8 @@ async def test_validate_trigger_invalid_triggers(hass, coap_wrapper):
         },
     )
 
-    assert len(notification_calls) == 1
+    assert len(notifications := hass.states.async_all("persistent_notification")) == 1
     assert (
         "The following integrations and platforms could not be set up"
-        in notification_calls[0].data["message"]
+        in notifications[0].attributes["message"]
     )

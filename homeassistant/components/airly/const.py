@@ -25,10 +25,10 @@ SUFFIX_LIMIT: Final = "LIMIT"
 
 ATTRIBUTION: Final = "Data provided by Airly"
 CONF_USE_NEAREST: Final = "use_nearest"
-DEFAULT_NAME: Final = "Airly"
 DOMAIN: Final = "airly"
 LABEL_ADVICE: Final = "advice"
 MANUFACTURER: Final = "Airly sp. z o.o."
 MAX_UPDATE_INTERVAL: Final = 90
 MIN_UPDATE_INTERVAL: Final = 5
 NO_AIRLY_SENSORS: Final = "There are no Airly sensors in this area yet."
+URL = "https://airly.org/map/#{latitude},{longitude}"

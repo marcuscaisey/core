@@ -4,9 +4,11 @@ from unittest.mock import patch
 from pypck.connection import PchkAuthenticationError, PchkLicenseError
 import pytest
 
-from homeassistant import config_entries, data_entry_flow, setup
+from homeassistant import config_entries, data_entry_flow
 from homeassistant.components.lcn.const import CONF_DIM_MODE, CONF_SK_NUM_TRIES, DOMAIN
 from homeassistant.const import (
+    CONF_DEVICES,
+    CONF_ENTITIES,
     CONF_HOST,
     CONF_IP_ADDRESS,
     CONF_PASSWORD,
@@ -24,12 +26,14 @@ IMPORT_DATA = {
     CONF_PASSWORD: "lcn",
     CONF_SK_NUM_TRIES: 0,
     CONF_DIM_MODE: "STEPS200",
+    CONF_DEVICES: [],
+    CONF_ENTITIES: [],
 }
 
 
 async def test_step_import(hass):
     """Test for import step."""
-    await setup.async_setup_component(hass, "persistent_notification", {})
+
     with patch("pypck.connection.PchkConnectionManager.async_connect"), patch(
         "homeassistant.components.lcn.async_setup", return_value=True
     ), patch("homeassistant.components.lcn.async_setup_entry", return_value=True):
@@ -39,14 +43,14 @@ async def test_step_import(hass):
         )
         await hass.async_block_till_done()
 
-        assert result["type"] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
+        assert result["type"] == data_entry_flow.FlowResultType.CREATE_ENTRY
         assert result["title"] == "pchk"
         assert result["data"] == IMPORT_DATA
 
 
 async def test_step_import_existing_host(hass):
     """Test for update of config_entry if imported host already exists."""
-    await setup.async_setup_component(hass, "persistent_notification", {})
+
     # Create config entry and add it to hass
     mock_data = IMPORT_DATA.copy()
     mock_data.update({CONF_SK_NUM_TRIES: 3, CONF_DIM_MODE: 50})
@@ -61,7 +65,7 @@ async def test_step_import_existing_host(hass):
         await hass.async_block_till_done()
 
         # Check if config entry was updated
-        assert result["type"] == data_entry_flow.RESULT_TYPE_ABORT
+        assert result["type"] == data_entry_flow.FlowResultType.ABORT
         assert result["reason"] == "existing_configuration_updated"
         assert mock_entry.source == config_entries.SOURCE_IMPORT
         assert mock_entry.data == IMPORT_DATA
@@ -76,8 +80,7 @@ async def test_step_import_existing_host(hass):
     ],
 )
 async def test_step_import_error(hass, error, reason):
-    """Test for authentication error is handled correctly."""
-    await setup.async_setup_component(hass, "persistent_notification", {})
+    """Test for error in import is handled correctly."""
     with patch(
         "pypck.connection.PchkConnectionManager.async_connect", side_effect=error
     ):
@@ -88,5 +91,5 @@ async def test_step_import_error(hass, error, reason):
         )
         await hass.async_block_till_done()
 
-        assert result["type"] == data_entry_flow.RESULT_TYPE_ABORT
+        assert result["type"] == data_entry_flow.FlowResultType.ABORT
         assert result["reason"] == reason

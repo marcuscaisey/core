@@ -1,4 +1,6 @@
 """Sensor for retrieving latest GitLab CI job information."""
+from __future__ import annotations
+
 from datetime import timedelta
 import logging
 
@@ -6,14 +8,11 @@ from gitlab import Gitlab, GitlabAuthenticationError, GitlabGetError
 import voluptuous as vol
 
 from homeassistant.components.sensor import PLATFORM_SCHEMA, SensorEntity
-from homeassistant.const import (
-    ATTR_ATTRIBUTION,
-    CONF_NAME,
-    CONF_SCAN_INTERVAL,
-    CONF_TOKEN,
-    CONF_URL,
-)
+from homeassistant.const import CONF_NAME, CONF_SCAN_INTERVAL, CONF_TOKEN, CONF_URL
+from homeassistant.core import HomeAssistant
 import homeassistant.helpers.config_validation as cv
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 from homeassistant.util import Throttle
 
 _LOGGER = logging.getLogger(__name__)
@@ -49,7 +48,12 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
 )
 
 
-def setup_platform(hass, config, add_entities, discovery_info=None):
+def setup_platform(
+    hass: HomeAssistant,
+    config: ConfigType,
+    add_entities: AddEntitiesCallback,
+    discovery_info: DiscoveryInfoType | None = None,
+) -> None:
     """Set up the GitLab sensor platform."""
     _name = config.get(CONF_NAME)
     _interval = config.get(CONF_SCAN_INTERVAL, SCAN_INTERVAL)
@@ -67,6 +71,8 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
 
 class GitLabSensor(SensorEntity):
     """Representation of a GitLab sensor."""
+
+    _attr_attribution = ATTRIBUTION
 
     def __init__(self, gitlab_data, name):
         """Initialize the GitLab sensor."""
@@ -101,7 +107,6 @@ class GitLabSensor(SensorEntity):
     def extra_state_attributes(self):
         """Return the state attributes."""
         return {
-            ATTR_ATTRIBUTION: ATTRIBUTION,
             ATTR_BUILD_STATUS: self._state,
             ATTR_BUILD_STARTED: self._started_at,
             ATTR_BUILD_FINISHED: self._finished_at,

@@ -1,15 +1,15 @@
 {
     "config": {
         "error": {
-            "cannot_connect": "No se pudo conectar",
-            "unknown": "Error inesperado"
+            "cannot_connect": "No se pudo conectar"
         },
         "step": {
             "user": {
                 "data": {
                     "host": "Host",
                     "name": "Nombre"
-                }
+                },
+                "description": "Configura P1 Monitor para integrarlo con Home Assistant."
             }
         }
     }

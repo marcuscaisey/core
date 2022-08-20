@@ -3,17 +3,17 @@ from unittest.mock import MagicMock, patch
 
 from pytest import mark
 
-from homeassistant import config_entries, setup
+from homeassistant import config_entries
 from homeassistant.components.prosegur.config_flow import CannotConnect, InvalidAuth
 from homeassistant.components.prosegur.const import DOMAIN
-from homeassistant.data_entry_flow import RESULT_TYPE_ABORT, RESULT_TYPE_FORM
+from homeassistant.data_entry_flow import FlowResultType
 
 from tests.common import MockConfigEntry
 
 
 async def test_form(hass):
     """Test we get the form."""
-    await setup.async_setup_component(hass, "persistent_notification", {})
+
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": config_entries.SOURCE_USER}
     )
@@ -145,7 +145,7 @@ async def test_reauth_flow(hass):
         data=entry.data,
     )
     assert result["step_id"] == "reauth_confirm"
-    assert result["type"] == RESULT_TYPE_FORM
+    assert result["type"] == FlowResultType.FORM
     assert result["errors"] == {}
 
     install = MagicMock()
@@ -167,7 +167,7 @@ async def test_reauth_flow(hass):
         )
         await hass.async_block_till_done()
 
-    assert result2["type"] == RESULT_TYPE_ABORT
+    assert result2["type"] == FlowResultType.ABORT
     assert result2["reason"] == "reauth_successful"
     assert entry.data == {
         "country": "PT",
@@ -223,5 +223,5 @@ async def test_reauth_flow_error(hass, exception, base_error):
         )
         await hass.async_block_till_done()
 
-    assert result2["type"] == RESULT_TYPE_FORM
+    assert result2["type"] == FlowResultType.FORM
     assert result2["errors"]["base"] == base_error

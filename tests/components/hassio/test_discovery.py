@@ -1,8 +1,10 @@
 """Test config flow."""
+from http import HTTPStatus
 from unittest.mock import Mock, patch
 
+from homeassistant.components.hassio import HassioServiceInfo
 from homeassistant.components.hassio.handler import HassioAPIError
-from homeassistant.const import EVENT_HOMEASSISTANT_START
+from homeassistant.const import EVENT_HOMEASSISTANT_START, EVENT_HOMEASSISTANT_STARTED
 from homeassistant.setup import async_setup_component
 
 
@@ -43,18 +45,21 @@ async def test_hassio_discovery_startup(hass, aioclient_mock, hassio_client):
     ) as mock_mqtt:
         hass.bus.async_fire(EVENT_HOMEASSISTANT_START)
         await hass.async_block_till_done()
-
+        hass.bus.async_fire(EVENT_HOMEASSISTANT_STARTED)
+        await hass.async_block_till_done()
         assert aioclient_mock.call_count == 2
         assert mock_mqtt.called
         mock_mqtt.assert_called_with(
-            {
-                "broker": "mock-broker",
-                "port": 1883,
-                "username": "mock-user",
-                "password": "mock-pass",
-                "protocol": "3.1.1",
-                "addon": "Mosquitto Test",
-            }
+            HassioServiceInfo(
+                config={
+                    "broker": "mock-broker",
+                    "port": 1883,
+                    "username": "mock-user",
+                    "password": "mock-pass",
+                    "protocol": "3.1.1",
+                    "addon": "Mosquitto Test",
+                }
+            )
         )
 
 
@@ -108,14 +113,16 @@ async def test_hassio_discovery_startup_done(hass, aioclient_mock, hassio_client
         assert aioclient_mock.call_count == 2
         assert mock_mqtt.called
         mock_mqtt.assert_called_with(
-            {
-                "broker": "mock-broker",
-                "port": 1883,
-                "username": "mock-user",
-                "password": "mock-pass",
-                "protocol": "3.1.1",
-                "addon": "Mosquitto Test",
-            }
+            HassioServiceInfo(
+                config={
+                    "broker": "mock-broker",
+                    "port": 1883,
+                    "username": "mock-user",
+                    "password": "mock-pass",
+                    "protocol": "3.1.1",
+                    "addon": "Mosquitto Test",
+                }
+            )
         )
 
 
@@ -153,17 +160,21 @@ async def test_hassio_discovery_webhook(hass, aioclient_mock, hassio_client):
             json={"addon": "mosquitto", "service": "mqtt", "uuid": "testuuid"},
         )
         await hass.async_block_till_done()
+        hass.bus.async_fire(EVENT_HOMEASSISTANT_STARTED)
+        await hass.async_block_till_done()
 
-        assert resp.status == 200
+        assert resp.status == HTTPStatus.OK
         assert aioclient_mock.call_count == 2
         assert mock_mqtt.called
         mock_mqtt.assert_called_with(
-            {
-                "broker": "mock-broker",
-                "port": 1883,
-                "username": "mock-user",
-                "password": "mock-pass",
-                "protocol": "3.1.1",
-                "addon": "Mosquitto Test",
-            }
+            HassioServiceInfo(
+                config={
+                    "broker": "mock-broker",
+                    "port": 1883,
+                    "username": "mock-user",
+                    "password": "mock-pass",
+                    "protocol": "3.1.1",
+                    "addon": "Mosquitto Test",
+                }
+            )
         )

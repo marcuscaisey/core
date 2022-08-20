@@ -1,5 +1,8 @@
 """Support for X10 dimmer over Mochad."""
+from __future__ import annotations
+
 import logging
+from typing import Any
 
 from pymochad import device
 from pymochad.exceptions import MochadException
@@ -8,11 +11,14 @@ import voluptuous as vol
 from homeassistant.components.light import (
     ATTR_BRIGHTNESS,
     PLATFORM_SCHEMA,
-    SUPPORT_BRIGHTNESS,
+    ColorMode,
     LightEntity,
 )
 from homeassistant.const import CONF_ADDRESS, CONF_DEVICES, CONF_NAME, CONF_PLATFORM
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 
 from . import CONF_COMM_TYPE, DOMAIN, REQ_LOCK
 
@@ -36,16 +42,23 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
 )
 
 
-def setup_platform(hass, config, add_entities, discovery_info=None):
+def setup_platform(
+    hass: HomeAssistant,
+    config: ConfigType,
+    add_entities: AddEntitiesCallback,
+    discovery_info: DiscoveryInfoType | None = None,
+) -> None:
     """Set up X10 dimmers over a mochad controller."""
     mochad_controller = hass.data[DOMAIN]
-    devs = config.get(CONF_DEVICES)
+    devs = config[CONF_DEVICES]
     add_entities([MochadLight(hass, mochad_controller.ctrl, dev) for dev in devs])
-    return True
 
 
 class MochadLight(LightEntity):
     """Representation of a X10 dimmer over Mochad."""
+
+    _attr_color_mode = ColorMode.BRIGHTNESS
+    _attr_supported_color_modes = {ColorMode.BRIGHTNESS}
 
     def __init__(self, hass, ctrl, dev):
         """Initialize a Mochad Light Device."""
@@ -81,11 +94,6 @@ class MochadLight(LightEntity):
         return self._state
 
     @property
-    def supported_features(self):
-        """Return supported features."""
-        return SUPPORT_BRIGHTNESS
-
-    @property
     def assumed_state(self):
         """X10 devices are normally 1-way so we have to assume the state."""
         return True
@@ -105,7 +113,7 @@ class MochadLight(LightEntity):
             self.light.send_cmd(f"bright {mochad_brightness}")
             self._controller.read_data()
 
-    def turn_on(self, **kwargs):
+    def turn_on(self, **kwargs: Any) -> None:
         """Send the command to turn the light on."""
         _LOGGER.debug("Reconnect %s:%s", self._controller.server, self._controller.port)
         brightness = kwargs.get(ATTR_BRIGHTNESS, 255)
@@ -130,7 +138,7 @@ class MochadLight(LightEntity):
             except (MochadException, OSError) as exc:
                 _LOGGER.error("Error with mochad communication: %s", exc)
 
-    def turn_off(self, **kwargs):
+    def turn_off(self, **kwargs: Any) -> None:
         """Send the command to turn the light on."""
         _LOGGER.debug("Reconnect %s:%s", self._controller.server, self._controller.port)
         with REQ_LOCK:

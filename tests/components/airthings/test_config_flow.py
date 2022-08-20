@@ -3,10 +3,10 @@ from unittest.mock import patch
 
 import airthings
 
-from homeassistant import config_entries, setup
+from homeassistant import config_entries
 from homeassistant.components.airthings.const import CONF_ID, CONF_SECRET, DOMAIN
 from homeassistant.core import HomeAssistant
-from homeassistant.data_entry_flow import RESULT_TYPE_CREATE_ENTRY, RESULT_TYPE_FORM
+from homeassistant.data_entry_flow import FlowResultType
 
 from tests.common import MockConfigEntry
 
@@ -18,11 +18,11 @@ TEST_DATA = {
 
 async def test_form(hass: HomeAssistant) -> None:
     """Test we get the form."""
-    await setup.async_setup_component(hass, "persistent_notification", {})
+
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": config_entries.SOURCE_USER}
     )
-    assert result["type"] == RESULT_TYPE_FORM
+    assert result["type"] == FlowResultType.FORM
     assert result["errors"] is None
 
     with patch("airthings.get_token", return_value="test_token",), patch(
@@ -35,7 +35,7 @@ async def test_form(hass: HomeAssistant) -> None:
         )
         await hass.async_block_till_done()
 
-    assert result2["type"] == RESULT_TYPE_CREATE_ENTRY
+    assert result2["type"] == FlowResultType.CREATE_ENTRY
     assert result2["title"] == "Airthings"
     assert result2["data"] == TEST_DATA
     assert len(mock_setup_entry.mock_calls) == 1
@@ -56,7 +56,7 @@ async def test_form_invalid_auth(hass: HomeAssistant) -> None:
             TEST_DATA,
         )
 
-    assert result2["type"] == RESULT_TYPE_FORM
+    assert result2["type"] == FlowResultType.FORM
     assert result2["errors"] == {"base": "invalid_auth"}
 
 
@@ -75,7 +75,7 @@ async def test_form_cannot_connect(hass: HomeAssistant) -> None:
             TEST_DATA,
         )
 
-    assert result2["type"] == RESULT_TYPE_FORM
+    assert result2["type"] == FlowResultType.FORM
     assert result2["errors"] == {"base": "cannot_connect"}
 
 
@@ -94,7 +94,7 @@ async def test_form_unknown_error(hass: HomeAssistant) -> None:
             TEST_DATA,
         )
 
-    assert result2["type"] == RESULT_TYPE_FORM
+    assert result2["type"] == FlowResultType.FORM
     assert result2["errors"] == {"base": "unknown"}
 
 

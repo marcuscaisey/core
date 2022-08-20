@@ -17,29 +17,14 @@ class RestEntity(Entity):
         self,
         coordinator: DataUpdateCoordinator[Any],
         rest: RestData,
-        name,
-        device_class,
         resource_template,
         force_update,
     ) -> None:
         """Create the entity that may have a coordinator."""
         self.coordinator = coordinator
         self.rest = rest
-        self._name = name
-        self._device_class = device_class
         self._resource_template = resource_template
         self._force_update = force_update
-        super().__init__()
-
-    @property
-    def name(self):
-        """Return the name of the sensor."""
-        return self._name
-
-    @property
-    def device_class(self):
-        """Return the class of this sensor."""
-        return self._device_class
 
     @property
     def force_update(self):
@@ -48,7 +33,7 @@ class RestEntity(Entity):
 
     @property
     def should_poll(self) -> bool:
-        """Poll only if we do noty have a coordinator."""
+        """Poll only if we do not have a coordinator."""
         return not self.coordinator
 
     @property

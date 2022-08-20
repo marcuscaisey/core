@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 from pyflick.authentication import AuthException
 
-from homeassistant import config_entries, data_entry_flow, setup
+from homeassistant import config_entries, data_entry_flow
 from homeassistant.components.flick_electric.const import DOMAIN
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 
@@ -23,7 +23,7 @@ async def _flow_submit(hass):
 
 async def test_form(hass):
     """Test we get the form."""
-    await setup.async_setup_component(hass, "persistent_notification", {})
+
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": config_entries.SOURCE_USER}
     )
@@ -43,7 +43,7 @@ async def test_form(hass):
         )
         await hass.async_block_till_done()
 
-    assert result2["type"] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
+    assert result2["type"] == data_entry_flow.FlowResultType.CREATE_ENTRY
     assert result2["title"] == "Flick Electric: test-username"
     assert result2["data"] == CONF
     assert len(mock_setup_entry.mock_calls) == 1
@@ -65,7 +65,7 @@ async def test_form_duplicate_login(hass):
     ):
         result = await _flow_submit(hass)
 
-    assert result["type"] == data_entry_flow.RESULT_TYPE_ABORT
+    assert result["type"] == data_entry_flow.FlowResultType.ABORT
     assert result["reason"] == "already_configured"
 
 
@@ -77,7 +77,7 @@ async def test_form_invalid_auth(hass):
     ):
         result = await _flow_submit(hass)
 
-    assert result["type"] == data_entry_flow.RESULT_TYPE_FORM
+    assert result["type"] == data_entry_flow.FlowResultType.FORM
     assert result["errors"] == {"base": "invalid_auth"}
 
 
@@ -89,7 +89,7 @@ async def test_form_cannot_connect(hass):
     ):
         result = await _flow_submit(hass)
 
-    assert result["type"] == data_entry_flow.RESULT_TYPE_FORM
+    assert result["type"] == data_entry_flow.FlowResultType.FORM
     assert result["errors"] == {"base": "cannot_connect"}
 
 
@@ -101,5 +101,5 @@ async def test_form_generic_exception(hass):
     ):
         result = await _flow_submit(hass)
 
-    assert result["type"] == data_entry_flow.RESULT_TYPE_FORM
+    assert result["type"] == data_entry_flow.FlowResultType.FORM
     assert result["errors"] == {"base": "unknown"}

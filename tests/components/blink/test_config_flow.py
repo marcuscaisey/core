@@ -4,7 +4,7 @@ from unittest.mock import Mock, patch
 from blinkpy.auth import LoginError
 from blinkpy.blinkpy import BlinkSetupError
 
-from homeassistant import config_entries, data_entry_flow, setup
+from homeassistant import config_entries, data_entry_flow
 from homeassistant.components.blink import DOMAIN
 
 from tests.common import MockConfigEntry
@@ -12,7 +12,7 @@ from tests.common import MockConfigEntry
 
 async def test_form(hass):
     """Test we get the form."""
-    await setup.async_setup_component(hass, "persistent_notification", {})
+
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": config_entries.SOURCE_USER}
     )
@@ -50,7 +50,7 @@ async def test_form(hass):
 
 async def test_form_2fa(hass):
     """Test we get the 2fa form."""
-    await setup.async_setup_component(hass, "persistent_notification", {})
+
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": config_entries.SOURCE_USER}
     )
@@ -92,7 +92,7 @@ async def test_form_2fa(hass):
 
 async def test_form_2fa_connect_error(hass):
     """Test we report a connect error during 2fa setup."""
-    await setup.async_setup_component(hass, "persistent_notification", {})
+
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": config_entries.SOURCE_USER}
     )
@@ -131,7 +131,7 @@ async def test_form_2fa_connect_error(hass):
 
 async def test_form_2fa_invalid_key(hass):
     """Test we report an error if key is invalid."""
-    await setup.async_setup_component(hass, "persistent_notification", {})
+
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": config_entries.SOURCE_USER}
     )
@@ -170,7 +170,7 @@ async def test_form_2fa_invalid_key(hass):
 
 async def test_form_2fa_unknown_error(hass):
     """Test we report an unknown error during 2fa setup."""
-    await setup.async_setup_component(hass, "persistent_notification", {})
+
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": config_entries.SOURCE_USER}
     )
@@ -246,9 +246,11 @@ async def test_form_unknown_error(hass):
 async def test_reauth_shows_user_step(hass):
     """Test reauth shows the user form."""
     result = await hass.config_entries.flow.async_init(
-        DOMAIN, context={"source": config_entries.SOURCE_REAUTH}
+        DOMAIN,
+        context={"source": config_entries.SOURCE_REAUTH},
+        data={"username": "blink@example.com", "password": "invalid_password"},
     )
-    assert result["type"] == data_entry_flow.RESULT_TYPE_FORM
+    assert result["type"] == data_entry_flow.FlowResultType.FORM
     assert result["step_id"] == "user"
 
 
@@ -278,7 +280,7 @@ async def test_options_flow(hass):
         config_entry.entry_id, context={"show_advanced_options": False}
     )
 
-    assert result["type"] == data_entry_flow.RESULT_TYPE_FORM
+    assert result["type"] == data_entry_flow.FlowResultType.FORM
     assert result["step_id"] == "simple_options"
 
     result = await hass.config_entries.options.async_configure(
@@ -286,6 +288,6 @@ async def test_options_flow(hass):
         user_input={"scan_interval": 5},
     )
 
-    assert result["type"] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
+    assert result["type"] == data_entry_flow.FlowResultType.CREATE_ENTRY
     assert result["data"] == {"scan_interval": 5}
     assert mock_blink.refresh_rate == 5

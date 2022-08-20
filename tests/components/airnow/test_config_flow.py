@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 from pyairnow.errors import AirNowError, InvalidKeyError
 
-from homeassistant import config_entries, data_entry_flow, setup
+from homeassistant import config_entries, data_entry_flow
 from homeassistant.components.airnow.const import DOMAIN
 from homeassistant.const import CONF_API_KEY, CONF_LATITUDE, CONF_LONGITUDE, CONF_RADIUS
 
@@ -68,11 +68,11 @@ MOCK_RESPONSE = [
 
 async def test_form(hass):
     """Test we get the form."""
-    await setup.async_setup_component(hass, "persistent_notification", {})
+
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": config_entries.SOURCE_USER}
     )
-    assert result["type"] == data_entry_flow.RESULT_TYPE_FORM
+    assert result["type"] == data_entry_flow.FlowResultType.FORM
     assert result["errors"] == {}
 
     with patch("pyairnow.WebServiceAPI._get", return_value=MOCK_RESPONSE), patch(
@@ -86,7 +86,7 @@ async def test_form(hass):
 
         await hass.async_block_till_done()
 
-    assert result2["type"] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
+    assert result2["type"] == data_entry_flow.FlowResultType.CREATE_ENTRY
     assert result2["data"] == CONFIG
     assert len(mock_setup_entry.mock_calls) == 1
 

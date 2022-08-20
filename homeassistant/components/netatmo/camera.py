@@ -8,7 +8,7 @@ import aiohttp
 import pyatmo
 import voluptuous as vol
 
-from homeassistant.components.camera import SUPPORT_STREAM, Camera
+from homeassistant.components.camera import Camera, CameraEntityFeature
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError, PlatformNotReady
@@ -36,6 +36,7 @@ from .const import (
     SERVICE_SET_PERSON_AWAY,
     SERVICE_SET_PERSONS_HOME,
     SIGNAL_NAME,
+    TYPE_SECURITY,
     WEBHOOK_LIGHT_MODE,
     WEBHOOK_NACAMERA_CONNECTION,
     WEBHOOK_PUSH_TYPE,
@@ -54,9 +55,6 @@ async def async_setup_entry(
     """Set up the Netatmo camera platform."""
     data_handler = hass.data[DOMAIN][entry.entry_id][DATA_HANDLER]
 
-    await data_handler.register_data_class(
-        CAMERA_DATA_CLASS_NAME, CAMERA_DATA_CLASS_NAME, None
-    )
     data_class = data_handler.data.get(CAMERA_DATA_CLASS_NAME)
 
     if not data_class or not data_class.raw_data:
@@ -114,6 +112,10 @@ async def async_setup_entry(
 class NetatmoCamera(NetatmoBase, Camera):
     """Representation of a Netatmo camera."""
 
+    _attr_brand = MANUFACTURER
+    _attr_has_entity_name = True
+    _attr_supported_features = CameraEntityFeature.STREAM
+
     def __init__(
         self,
         data_handler: NetatmoDataHandler,
@@ -126,15 +128,15 @@ class NetatmoCamera(NetatmoBase, Camera):
         Camera.__init__(self)
         super().__init__(data_handler)
 
-        self._data_classes.append(
+        self._publishers.append(
             {"name": CAMERA_DATA_CLASS_NAME, SIGNAL_NAME: CAMERA_DATA_CLASS_NAME}
         )
 
         self._id = camera_id
         self._home_id = home_id
         self._device_name = self._data.get_camera(camera_id=camera_id)["name"]
-        self._attr_name = f"{MANUFACTURER} {self._device_name}"
         self._model = camera_type
+        self._netatmo_type = TYPE_SECURITY
         self._attr_unique_id = f"{self._id}-{self._model}"
         self._quality = quality
         self._vpnurl: str | None = None
@@ -150,7 +152,7 @@ class NetatmoCamera(NetatmoBase, Camera):
         await super().async_added_to_hass()
 
         for event_type in (EVENT_TYPE_LIGHT_MODE, EVENT_TYPE_OFF, EVENT_TYPE_ON):
-            self._listeners.append(
+            self.data_handler.config_entry.async_on_unload(
                 async_dispatcher_connect(
                     self.hass,
                     f"signal-{DOMAIN}-webhook-{event_type}",
@@ -170,13 +172,13 @@ class NetatmoCamera(NetatmoBase, Camera):
 
         if data["home_id"] == self._home_id and data["camera_id"] == self._id:
             if data[WEBHOOK_PUSH_TYPE] in ("NACamera-off", "NACamera-disconnection"):
-                self.is_streaming = False
+                self._attr_is_streaming = False
                 self._status = "off"
             elif data[WEBHOOK_PUSH_TYPE] in (
                 "NACamera-on",
                 WEBHOOK_NACAMERA_CONNECTION,
             ):
-                self.is_streaming = True
+                self._attr_is_streaming = True
                 self._status = "on"
             elif data[WEBHOOK_PUSH_TYPE] == WEBHOOK_LIGHT_MODE:
                 self._light_state = data["sub_type"]
@@ -192,7 +194,7 @@ class NetatmoCamera(NetatmoBase, Camera):
         """Return data for this entity."""
         return cast(
             pyatmo.AsyncCameraData,
-            self.data_handler.data[self._data_classes[0]["name"]],
+            self.data_handler.data[self._publishers[0]["name"]],
         )
 
     async def async_camera_image(
@@ -217,16 +219,6 @@ class NetatmoCamera(NetatmoBase, Camera):
     def available(self) -> bool:
         """Return True if entity is available."""
         return bool(self._alim_status == "on" or self._status == "disconnected")
-
-    @property
-    def supported_features(self) -> int:
-        """Return supported features."""
-        return SUPPORT_STREAM
-
-    @property
-    def brand(self) -> str:
-        """Return the camera brand."""
-        return MANUFACTURER
 
     @property
     def motion_detection_enabled(self) -> bool:
@@ -271,7 +263,7 @@ class NetatmoCamera(NetatmoBase, Camera):
         self._sd_status = camera.get("sd_status")
         self._alim_status = camera.get("alim_status")
         self._is_local = camera.get("is_local")
-        self.is_streaming = bool(self._status == "on")
+        self._attr_is_streaming = bool(self._status == "on")
 
         if self._model == "NACamera":  # Smart Indoor Camera
             self.hass.data[DOMAIN][DATA_EVENTS][self._id] = self.process_events(

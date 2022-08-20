@@ -3,12 +3,14 @@ from __future__ import annotations
 
 from typing import Any
 
-from homeassistant.components.device_tracker import SOURCE_TYPE_GPS
+from homeassistant.components.device_tracker import AsyncSeeCallback, SourceType
 from homeassistant.components.device_tracker.config_entry import TrackerEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity import DeviceInfo
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 
 from .account import IcloudAccount, IcloudDevice
 from .const import (
@@ -19,16 +21,21 @@ from .const import (
 )
 
 
-async def async_setup_scanner(hass: HomeAssistant, config, see, discovery_info=None):
+async def async_setup_scanner(
+    hass: HomeAssistant,
+    config: ConfigType,
+    async_see: AsyncSeeCallback,
+    discovery_info: DiscoveryInfoType | None = None,
+) -> bool:
     """Old way of setting up the iCloud tracker."""
 
 
 async def async_setup_entry(
-    hass: HomeAssistant, entry: ConfigEntry, async_add_entities
+    hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
     """Set up device tracker for iCloud component."""
-    account = hass.data[DOMAIN][entry.unique_id]
-    tracked = set()
+    account: IcloudAccount = hass.data[DOMAIN][entry.unique_id]
+    tracked = set[str]()
 
     @callback
     def update_account():
@@ -43,7 +50,7 @@ async def async_setup_entry(
 
 
 @callback
-def add_entities(account, async_add_entities, tracked):
+def add_entities(account: IcloudAccount, async_add_entities, tracked):
     """Add new tracker entities from the account."""
     new_tracked = []
 
@@ -93,14 +100,14 @@ class IcloudTrackerEntity(TrackerEntity):
         return self._device.location[DEVICE_LOCATION_LONGITUDE]
 
     @property
-    def battery_level(self) -> int:
+    def battery_level(self) -> int | None:
         """Return the battery level of the device."""
         return self._device.battery_level
 
     @property
-    def source_type(self) -> str:
+    def source_type(self) -> SourceType:
         """Return the source type, eg gps or router, of the device."""
-        return SOURCE_TYPE_GPS
+        return SourceType.GPS
 
     @property
     def icon(self) -> str:
@@ -115,12 +122,13 @@ class IcloudTrackerEntity(TrackerEntity):
     @property
     def device_info(self) -> DeviceInfo:
         """Return the device information."""
-        return {
-            "identifiers": {(DOMAIN, self._device.unique_id)},
-            "name": self._device.name,
-            "manufacturer": "Apple",
-            "model": self._device.device_model,
-        }
+        return DeviceInfo(
+            configuration_url="https://icloud.com/",
+            identifiers={(DOMAIN, self._device.unique_id)},
+            manufacturer="Apple",
+            model=self._device.device_model,
+            name=self._device.name,
+        )
 
     async def async_added_to_hass(self):
         """Register state update callback."""
@@ -139,7 +147,7 @@ def icon_for_icloud_device(icloud_device: IcloudDevice) -> str:
         "iPad": "mdi:tablet",
         "iPhone": "mdi:cellphone",
         "iPod": "mdi:ipod",
-        "iMac": "mdi:desktop-mac",
+        "iMac": "mdi:monitor",
         "MacBookPro": "mdi:laptop",
     }
 

@@ -20,6 +20,13 @@ DATA_RADIO_TYPE = "deconz"
 DATA_PORT_PATH = "/dev/serial/by-id/FTDI_USB__-__Serial_Cable_12345678-if00-port0"
 
 
+@pytest.fixture(autouse=True)
+def disable_platform_only():
+    """Disable platforms to speed up tests."""
+    with patch("homeassistant.components.zha.PLATFORMS", []):
+        yield
+
+
 @pytest.fixture
 def config_entry_v1(hass):
     """Config entry version 1 fixture."""
@@ -89,7 +96,6 @@ async def test_migration_from_v1_wrong_baudrate(hass, config_entry_v1):
 )
 async def test_config_depreciation(hass, zha_config):
     """Test config option depreciation."""
-    await async_setup_component(hass, "persistent_notification", {})
 
     with patch(
         "homeassistant.components.zha.async_setup", return_value=True

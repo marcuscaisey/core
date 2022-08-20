@@ -8,12 +8,7 @@ from pycfdns.exceptions import (
 from homeassistant.components.cloudflare.const import CONF_RECORDS, DOMAIN
 from homeassistant.config_entries import SOURCE_REAUTH, SOURCE_USER
 from homeassistant.const import CONF_API_TOKEN, CONF_SOURCE, CONF_ZONE
-from homeassistant.data_entry_flow import (
-    RESULT_TYPE_ABORT,
-    RESULT_TYPE_CREATE_ENTRY,
-    RESULT_TYPE_FORM,
-)
-from homeassistant.setup import async_setup_component
+from homeassistant.data_entry_flow import FlowResultType
 
 from . import (
     ENTRY_CONFIG,
@@ -28,12 +23,11 @@ from tests.common import MockConfigEntry
 
 async def test_user_form(hass, cfupdate_flow):
     """Test we get the user initiated form."""
-    await async_setup_component(hass, "persistent_notification", {})
 
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={CONF_SOURCE: SOURCE_USER}
     )
-    assert result["type"] == RESULT_TYPE_FORM
+    assert result["type"] == FlowResultType.FORM
     assert result["step_id"] == "user"
     assert result["errors"] == {}
 
@@ -43,7 +37,7 @@ async def test_user_form(hass, cfupdate_flow):
     )
     await hass.async_block_till_done()
 
-    assert result["type"] == RESULT_TYPE_FORM
+    assert result["type"] == FlowResultType.FORM
     assert result["step_id"] == "zone"
     assert result["errors"] == {}
 
@@ -53,7 +47,7 @@ async def test_user_form(hass, cfupdate_flow):
     )
     await hass.async_block_till_done()
 
-    assert result["type"] == RESULT_TYPE_FORM
+    assert result["type"] == FlowResultType.FORM
     assert result["step_id"] == "records"
     assert result["errors"] is None
 
@@ -64,7 +58,7 @@ async def test_user_form(hass, cfupdate_flow):
         )
         await hass.async_block_till_done()
 
-    assert result["type"] == RESULT_TYPE_CREATE_ENTRY
+    assert result["type"] == FlowResultType.CREATE_ENTRY
     assert result["title"] == USER_INPUT_ZONE[CONF_ZONE]
 
     assert result["data"]
@@ -92,7 +86,7 @@ async def test_user_form_cannot_connect(hass, cfupdate_flow):
         USER_INPUT,
     )
 
-    assert result["type"] == RESULT_TYPE_FORM
+    assert result["type"] == FlowResultType.FORM
     assert result["errors"] == {"base": "cannot_connect"}
 
 
@@ -110,7 +104,7 @@ async def test_user_form_invalid_auth(hass, cfupdate_flow):
         USER_INPUT,
     )
 
-    assert result["type"] == RESULT_TYPE_FORM
+    assert result["type"] == FlowResultType.FORM
     assert result["errors"] == {"base": "invalid_auth"}
 
 
@@ -128,7 +122,7 @@ async def test_user_form_invalid_zone(hass, cfupdate_flow):
         USER_INPUT,
     )
 
-    assert result["type"] == RESULT_TYPE_FORM
+    assert result["type"] == FlowResultType.FORM
     assert result["errors"] == {"base": "invalid_zone"}
 
 
@@ -146,7 +140,7 @@ async def test_user_form_unexpected_exception(hass, cfupdate_flow):
         USER_INPUT,
     )
 
-    assert result["type"] == RESULT_TYPE_FORM
+    assert result["type"] == FlowResultType.FORM
     assert result["errors"] == {"base": "unknown"}
 
 
@@ -160,7 +154,7 @@ async def test_user_form_single_instance_allowed(hass):
         context={CONF_SOURCE: SOURCE_USER},
         data=USER_INPUT,
     )
-    assert result["type"] == RESULT_TYPE_ABORT
+    assert result["type"] == FlowResultType.ABORT
     assert result["reason"] == "single_instance_allowed"
 
 
@@ -178,7 +172,7 @@ async def test_reauth_flow(hass, cfupdate_flow):
         },
         data=entry.data,
     )
-    assert result["type"] == RESULT_TYPE_FORM
+    assert result["type"] == FlowResultType.FORM
     assert result["step_id"] == "reauth_confirm"
 
     with _patch_async_setup_entry() as mock_setup_entry:
@@ -188,7 +182,7 @@ async def test_reauth_flow(hass, cfupdate_flow):
         )
         await hass.async_block_till_done()
 
-    assert result["type"] == RESULT_TYPE_ABORT
+    assert result["type"] == FlowResultType.ABORT
     assert result["reason"] == "reauth_successful"
 
     assert entry.data[CONF_API_TOKEN] == "other_token"

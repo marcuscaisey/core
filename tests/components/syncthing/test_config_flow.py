@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 from aiosyncthing.exceptions import UnauthorizedError
 
-from homeassistant import config_entries, data_entry_flow, setup
+from homeassistant import config_entries, data_entry_flow
 from homeassistant.components.syncthing.const import DOMAIN
 from homeassistant.const import CONF_NAME, CONF_TOKEN, CONF_URL, CONF_VERIFY_SSL
 
@@ -25,11 +25,11 @@ MOCK_ENTRY = {
 
 async def test_show_setup_form(hass):
     """Test that the setup form is served."""
-    await setup.async_setup_component(hass, "persistent_notification", {})
+
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": config_entries.SOURCE_USER}
     )
-    assert result["type"] == data_entry_flow.RESULT_TYPE_FORM
+    assert result["type"] == data_entry_flow.FlowResultType.FORM
     assert result["errors"] == {}
     assert result["step_id"] == "user"
 
@@ -52,7 +52,7 @@ async def test_flow_successful(hass):
                 CONF_VERIFY_SSL: VERIFY_SSL,
             },
         )
-        assert result["type"] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
+        assert result["type"] == data_entry_flow.FlowResultType.CREATE_ENTRY
         assert result["title"] == "http://127.0.0.1:8384"
         assert result["data"][CONF_NAME] == NAME
         assert result["data"][CONF_URL] == URL
@@ -74,7 +74,7 @@ async def test_flow_already_configured(hass):
             data=MOCK_ENTRY,
         )
 
-    assert result["type"] == data_entry_flow.RESULT_TYPE_ABORT
+    assert result["type"] == data_entry_flow.FlowResultType.ABORT
     assert result["reason"] == "already_configured"
 
 
@@ -88,7 +88,7 @@ async def test_flow_invalid_auth(hass):
             data=MOCK_ENTRY,
         )
 
-        assert result["type"] == data_entry_flow.RESULT_TYPE_FORM
+        assert result["type"] == data_entry_flow.FlowResultType.FORM
         assert result["errors"]["token"] == "invalid_auth"
 
 
@@ -102,5 +102,5 @@ async def test_flow_cannot_connect(hass):
             data=MOCK_ENTRY,
         )
 
-        assert result["type"] == data_entry_flow.RESULT_TYPE_FORM
+        assert result["type"] == data_entry_flow.FlowResultType.FORM
         assert result["errors"]["base"] == "cannot_connect"

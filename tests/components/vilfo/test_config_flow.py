@@ -3,19 +3,19 @@ from unittest.mock import Mock, patch
 
 import vilfo
 
-from homeassistant import config_entries, data_entry_flow, setup
+from homeassistant import config_entries, data_entry_flow
 from homeassistant.components.vilfo.const import DOMAIN
 from homeassistant.const import CONF_ACCESS_TOKEN, CONF_HOST, CONF_ID, CONF_MAC
 
 
 async def test_form(hass):
     """Test we get the form."""
-    await setup.async_setup_component(hass, "persistent_notification", {})
+
     mock_mac = "FF-00-00-00-00-00"
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": config_entries.SOURCE_USER}
     )
-    assert result["type"] == data_entry_flow.RESULT_TYPE_FORM
+    assert result["type"] == data_entry_flow.FlowResultType.FORM
     assert result["errors"] == {}
 
     with patch("vilfo.Client.ping", return_value=None), patch(
@@ -29,7 +29,7 @@ async def test_form(hass):
         )
         await hass.async_block_till_done()
 
-    assert result2["type"] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
+    assert result2["type"] == data_entry_flow.FlowResultType.CREATE_ENTRY
     assert result2["title"] == "testadmin.vilfo.com"
     assert result2["data"] == {
         "host": "testadmin.vilfo.com",
@@ -56,7 +56,7 @@ async def test_form_invalid_auth(hass):
             {"host": "testadmin.vilfo.com", "access_token": "test-token"},
         )
 
-    assert result2["type"] == data_entry_flow.RESULT_TYPE_FORM
+    assert result2["type"] == data_entry_flow.FlowResultType.FORM
     assert result2["errors"] == {"base": "invalid_auth"}
 
 
@@ -74,7 +74,7 @@ async def test_form_cannot_connect(hass):
             {"host": "testadmin.vilfo.com", "access_token": "test-token"},
         )
 
-    assert result2["type"] == data_entry_flow.RESULT_TYPE_FORM
+    assert result2["type"] == data_entry_flow.FlowResultType.FORM
     assert result2["errors"] == {"base": "cannot_connect"}
 
     with patch("vilfo.Client.ping", side_effect=vilfo.exceptions.VilfoException), patch(
@@ -85,7 +85,7 @@ async def test_form_cannot_connect(hass):
             {"host": "testadmin.vilfo.com", "access_token": "test-token"},
         )
 
-    assert result3["type"] == data_entry_flow.RESULT_TYPE_FORM
+    assert result3["type"] == data_entry_flow.FlowResultType.FORM
     assert result3["errors"] == {"base": "cannot_connect"}
 
 
@@ -128,8 +128,8 @@ async def test_form_already_configured(hass):
             {CONF_HOST: "testadmin.vilfo.com", CONF_ACCESS_TOKEN: "test-token"},
         )
 
-    assert first_flow_result2["type"] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
-    assert second_flow_result2["type"] == data_entry_flow.RESULT_TYPE_ABORT
+    assert first_flow_result2["type"] == data_entry_flow.FlowResultType.CREATE_ENTRY
+    assert second_flow_result2["type"] == data_entry_flow.FlowResultType.ABORT
     assert second_flow_result2["reason"] == "already_configured"
 
 
